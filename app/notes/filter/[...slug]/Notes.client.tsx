@@ -11,13 +11,20 @@ import { useDebouncedCallback } from 'use-debounce';
 import Link from 'next/link';
 
 export default function NotesClient({ tag }: { tag?: string }) {
-  const [searchWord, setSearchWord] = useState<string>('');
+  const [inputValue, setInputValue] = useState("");
+  const [searchWord, setSearchWord] = useState('');
   const [page, setPage] = useState(1);
 
-  const handleChange = useDebouncedCallback((event: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchWord(event.target.value);
+  const debounceSearch = useDebouncedCallback((value: string) => {
+    setSearchWord(value);
     setPage(1);
   }, 1000);
+
+  const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const value = event.target.value;
+    setInputValue(value);
+    debounceSearch(value);
+  };
 
   const { data } = useQuery({
     queryKey: ['myNoteHubKey', searchWord, page, tag],
@@ -29,19 +36,19 @@ export default function NotesClient({ tag }: { tag?: string }) {
   return (
     <div className={css.app}>
       <div className={css.toolbar}>
-        {<SearchBox value={searchWord} onChange={handleChange} />}
+        {<SearchBox value={inputValue} onChange={handleChange} />}
         {data && data?.notes.length > 0 && (
           <Pagination
-            totalPages={data?.totalPages ?? 0}
+            totalPages={data?.totalPages}
             page={page}
             onPageChange={newPage => setPage(newPage)}
           />
         )}
-        {
-          <Link className={css.button} href={"/notes/action/create"}>
+        
+          <Link className={css.button} href="/notes/action/create">
             Create note +
           </Link>
-        }
+        
       </div>
       {data && data?.notes.length > 0 && <NoteList notes={data?.notes} />}
     </div>
